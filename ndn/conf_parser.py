@@ -238,3 +238,30 @@ def parse_cars(conf_arq):
 
     return cars
 
+
+def parse_aps(conf_arq):
+    'Parse access_points section from the conf file.'
+    config = ConfigParser.RawConfigParser()
+    config.read(conf_arq)
+
+    access_points = []
+
+    try:
+        items = config.items('access_points')
+    except ConfigParser.NoSectionError:
+        return access_points
+
+    for item in items:
+        name = item[0]
+        args = item[1:]
+
+        attr_dict = {}
+        for arg in args:
+            key = arg.split('=')[0]
+            val = arg.split('=')[1]
+            attr_dict[key] = val
+
+        attr_dict['name'] = name
+        access_points.append(attr_dict)
+
+    return access_points

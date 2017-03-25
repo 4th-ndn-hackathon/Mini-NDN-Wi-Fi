@@ -68,7 +68,7 @@ from mininet.util import ipStr, ipParse
 
 from ndn import ExperimentManager
 from ndn.ndn_host import NdnHost, CpuLimitedNdnHost, NdnStation
-from ndn.conf_parser import parse_cars, parse_hosts, parse_switches, parse_links
+from ndn.conf_parser import parse_aps, parse_cars, parse_hosts, parse_switches, parse_links
 
 import os.path, time
 import shutil
@@ -218,6 +218,8 @@ class NdnTopo(Topo):
         links_conf = parse_links(conf_arq)
         cars_conf = parse_cars(conf_arq)
         self.cars = cars_conf
+        aps_conf = parse_aps(conf_arq)
+        self.access_points = aps_conf
 
         self.isTCLink = False
         self.isLimited = False
@@ -278,7 +280,15 @@ def execute(options):
         net = Mininet(topo,host=NdnHost)
 
     # Mininet WiFi
-    ap1 = net.addAccessPoint('ap1', ssid='ap')
+    access_points = {}
+    for idx, ap_conf in enumerate(topo.access_points):
+        name = ap_conf.get('name', 'ap{}'.format(idx))
+        ssid = ap_conf.get('ssid', 'ndn')
+        ap = net.addAccessPoint(
+            name,
+            ssid=ssid,
+        )
+        access_points[ssid] = ap
 
     cars = []
     for idx, car_conf in enumerate(topo.cars):
@@ -289,6 +299,11 @@ def execute(options):
         )
         car.conf = car_conf
         cars.append(car)
+
+        for ap_name in car_conf.get('ap', []):
+            ap = access_points.get(ap_name)
+            if ap:
+                net.addLink(ap, car)
 
     net.configureWifiNodes()
 
