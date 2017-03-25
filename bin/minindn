@@ -278,21 +278,21 @@ def execute(options):
         net = Mininet(topo,host=NdnHost)
 
     # Mininet WiFi
-    #for idx, car_conf in enumerate(topo.cars):
-    #    car = net.addCar(
-    #        car_conf.get('name', 'car{}'.format(idx)),
-    #        wlans=1,
-    #        ip='10.0.0.{}/8'.format(idx + 1),
-    #    )
-
-    sta1 = net.addStation('sta1', cls=NdnStation)
-    sta2 = net.addStation('sta2', cls=NdnStation)
     ap1 = net.addAccessPoint('ap1', ssid='ndn')
+
+    cars = []
+    for idx, car_conf in enumerate(topo.cars):
+        car = net.addStation(
+            car_conf.get('name', 'car{}'.format(idx)),
+            cls=NdnStation,
+        )
+        cars.append(car)
 
     net.configureWifiNodes()
 
-    net.addLink(ap1, sta1)
-    net.addLink(ap1, sta2)
+    for car in cars:
+        net.addLink(ap1, car)
+
     net.build()
 
     #for sta in net.vehiclesSTA:
