@@ -290,8 +290,19 @@ def execute(options):
 
     net.configureWifiNodes()
 
+    # The first few time car.cmd does not return anything!
     for car in cars:
-        net.addLink(ap1, car)
+        print("car: ", car)
+        net.addHoc(car, ssid='adhocNet', mode='g')
+        wifiFace = ""
+        while wifiFace == "":
+            wifiFace = car.cmd("nfdc face | grep wlan")
+            time.sleep(0.01)
+        wifiFace = wifiFace.split(" ")[0]
+        wifiFace = wifiFace.split("=")[1]
+        print(wifiFace)
+        car.cmd("nfdc route add / %s" % wifiFace)
+        #net.addLink(ap1, car)
 
     net.build()
 
@@ -361,6 +372,7 @@ def execute(options):
     nodes = nodes[0:-1]
 
     for host in net.hosts:
+        print(host.name)
         if 'app' in host.params:
             if host.params['app'] != '':
                 app = host.params['app']
