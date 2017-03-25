@@ -278,14 +278,16 @@ def execute(options):
         net = Mininet(topo,host=NdnHost)
 
     # Mininet WiFi
-    ap1 = net.addAccessPoint('ap1', ssid='ndn')
+    ap1 = net.addAccessPoint('ap1', ssid='ap')
 
     cars = []
     for idx, car_conf in enumerate(topo.cars):
         car = net.addStation(
             car_conf.get('name', 'car{}'.format(idx)),
             cls=NdnStation,
+            range=car_conf.get('range', 10),
         )
+        car.conf = car_conf
         cars.append(car)
 
     net.configureWifiNodes()
@@ -293,7 +295,7 @@ def execute(options):
     # The first few time car.cmd does not return anything!
     for car in cars:
         print("car: ", car)
-        net.addHoc(car, ssid='adhocNet', mode='g')
+        net.addHoc(car, ssid=car.conf.get('adhoc-ssid', 'adhocNet'), mode='g')
         wifiFace = ""
         while wifiFace == "":
             wifiFace = car.cmd("nfdc face | grep wlan")
@@ -302,12 +304,17 @@ def execute(options):
         wifiFace = wifiFace.split("=")[1]
         print(wifiFace)
         car.cmd("nfdc route add / %s" % wifiFace)
-        #net.addLink(ap1, car)
 
     net.build()
 
-    #for sta in net.vehiclesSTA:
-    #    net.addHoc(sta, ssid='ndn', mode='g')
+    net.plotGraph(max_x=100, max_y=100)
+    net.propagationModel('friisPropagationLossModel', sL=2)
+    net.startMobility(startTime=0)
+    net.mobility(cars[0], 'start', time=1, position='40.0,30.0,0.0')
+    net.mobility(cars[0], 'stop', time=22, position='0.0, 10.0, 0.0')
+    net.mobility(cars[1], 'start', time=1, position='0.0,100.0,0.0')
+    net.mobility(cars[1], 'stop', time=22, position='0.0,100.0,0.0')
+    net.stopMobility(stopTime=23)
 
     t2 = datetime.datetime.now()
 
