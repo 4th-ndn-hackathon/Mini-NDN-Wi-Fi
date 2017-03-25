@@ -1,4 +1,4 @@
-Mini-NDN
+Mini-NDN - Wifi
 ========
 
 ### What is Mini-NDN?
