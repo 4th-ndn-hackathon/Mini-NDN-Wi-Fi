@@ -58,7 +58,7 @@
 #   advertising or publicity pertaining to the Software or any derivatives
 #   without specific, written prior permission.
 
-from mininet.node import CPULimitedHost, Host, Node
+from mininet.node import CPULimitedHost, Host, Node, Station
 from ndn.nfd import Nfd
 
 class NdnHostCommon():
@@ -94,7 +94,7 @@ class NdnHost(Host, NdnHostCommon):
             NdnHostCommon.init()
 
         # Create home directory for a node
-        self.homeFolder = "%s/%s" % (self.params['workdir'], self.name)
+        self.homeFolder = "%s/%s" % (self.params.get('workdir', '/tmp'), self.name)
         self.cmd("mkdir -p %s" % self.homeFolder)
         self.cmd("cd %s" % self.homeFolder)
 
@@ -150,3 +150,8 @@ class CpuLimitedNdnHost(CPULimitedHost, NdnHostCommon):
         "Stop node."
         self.nfd.stop()
         Host.terminate(self)
+
+
+class NdnStation(Station, NdnHost):
+    pass
+

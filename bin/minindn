@@ -67,8 +67,8 @@ from mininet.util import ipStr, ipParse
 
 
 from ndn import ExperimentManager
-from ndn.ndn_host import NdnHost, CpuLimitedNdnHost
-from ndn.conf_parser import parse_hosts, parse_switches, parse_links
+from ndn.ndn_host import NdnHost, CpuLimitedNdnHost, NdnStation
+from ndn.conf_parser import parse_cars, parse_hosts, parse_switches, parse_links
 
 import os.path, time
 import shutil
@@ -216,6 +216,8 @@ class NdnTopo(Topo):
         hosts_conf = parse_hosts(conf_arq)
         switches_conf = parse_switches(conf_arq)
         links_conf = parse_links(conf_arq)
+        cars_conf = parse_cars(conf_arq)
+        self.cars = cars_conf
 
         self.isTCLink = False
         self.isLimited = False
@@ -275,6 +277,27 @@ def execute(options):
     else:
         net = Mininet(topo,host=NdnHost)
 
+    # Mininet WiFi
+    #for idx, car_conf in enumerate(topo.cars):
+    #    car = net.addCar(
+    #        car_conf.get('name', 'car{}'.format(idx)),
+    #        wlans=1,
+    #        ip='10.0.0.{}/8'.format(idx + 1),
+    #    )
+
+    sta1 = net.addStation('sta1', cls=NdnStation)
+    sta2 = net.addStation('sta2', cls=NdnStation)
+    ap1 = net.addAccessPoint('ap1', ssid='ndn')
+
+    net.configureWifiNodes()
+
+    net.addLink(ap1, sta1)
+    net.addLink(ap1, sta2)
+    net.build()
+
+    #for sta in net.vehiclesSTA:
+    #    net.addHoc(sta, ssid='ndn', mode='g')
+
     t2 = datetime.datetime.now()
 
     delta = t2 - t
@@ -291,6 +314,9 @@ def execute(options):
     for host in net.hosts:
         for intf in host.intfList():
             link = intf.link
+            if type(link.intf1) is str or type(link.intf2) is str:
+                continue
+
             node1, node2 = link.intf1.node, link.intf2.node
 
             if node1 in net.switches or node2 in net.switches:
@@ -311,6 +337,8 @@ def execute(options):
 
     # NLSR initialization
     for host in net.hosts:
+        if type(host) is NdnStation:
+            continue
         nodes += str(host.name) + ","
 
         conf = next(x for x in hosts_conf if x.name == host.name)

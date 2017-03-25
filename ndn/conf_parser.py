@@ -209,3 +209,32 @@ def parse_links(conf_arq):
 
 
     return links
+
+
+def parse_cars(conf_arq):
+    'Parse cars section from the conf file.'
+    config = ConfigParser.RawConfigParser()
+    config.read(conf_arq)
+
+    cars = []
+
+    try:
+        items = config.items('cars')
+    except ConfigParser.NoSectionError:
+        return cars
+
+    for item in items:
+        name = item[0]
+        args = item[1:]
+
+        attr_dict = {}
+        for arg in args:
+            key = arg.split('=')[0]
+            val = arg.split('=')[1]
+            attr_dict[key] = val
+
+        attr_dict['name'] = name
+        cars.append(attr_dict)
+
+    return cars
+
