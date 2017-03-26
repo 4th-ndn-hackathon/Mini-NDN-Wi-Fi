@@ -295,7 +295,7 @@ def execute(options):
             position=pos,
             range=ap_conf.get('range', 25),
         )
-        access_points[ssid] = ap
+        access_points[name] = ap
 
     cars = []
     for idx, car_conf in enumerate(topo.cars):
@@ -307,7 +307,8 @@ def execute(options):
         car.conf = car_conf
         cars.append(car)
 
-        for ap_name in car_conf.get('ap', []):
+        if 'ap' in car_conf:
+            ap_name = car_conf.get('ap')
             ap = access_points.get(ap_name)
             if ap:
                 net.addLink(ap, car)
