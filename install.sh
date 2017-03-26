@@ -211,7 +211,7 @@ function mininetwifi {
     git clone --depth 1 https://github.com/intrig-unicamp/mininet-wifi.git
     sudo cp -r mininet-wifi-mode/* mininet-wifi/ 
     cd mininet-wifi
-    sudo ./util/install.sh -Wfnv
+    sudo ./util/install.sh -nv
     cd ../
 }
 

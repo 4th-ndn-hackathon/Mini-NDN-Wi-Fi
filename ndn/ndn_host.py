@@ -103,6 +103,8 @@ class NdnHost(Host, NdnHostCommon):
 
         self.peerList = {}
 
+        self.label = 'ndn://' + name
+
     def config(self, app=None, cache=None, **params):
 
         r = Node.config(self, **params)
