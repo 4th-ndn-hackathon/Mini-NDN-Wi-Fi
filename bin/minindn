@@ -114,6 +114,7 @@ class ProgramOptions:
         self.workDir = "/tmp"
         self.resultDir = None
         self.pctTraffic = 1.0
+        self.addhoc = False
 
 def createResultsDir(resultDir, faces, hr):
     if faces == 0:
@@ -183,6 +184,8 @@ def parse_args():
     parser.add_argument('--version', '-V', action='version', version='%(prog)s ' + VERSION_NUMBER,
                         help='Displays version information')
 
+    parser.add_argument('--adhoc', action="store_true", dest="adhoc")
+
     args = parser.parse_args()
 
     options = ProgramOptions()
@@ -199,6 +202,7 @@ def parse_args():
     options.workDir = args.workDir
     options.resultDir = args.resultDir
     options.pctTraffic = args.pctTraffic
+    options.adhoc = args.adhoc
 
     if options.experimentName is not None and options.experimentName not in ExperimentManager.getExperimentNames():
         print("No experiment named %s" % options.experimentName)
@@ -286,32 +290,56 @@ def execute(options):
     else:
         net = Mininet(topo,host=NdnHost, **openflow_params)
 
-    sta1 = net.addStation('sta1', cls=NdnStation, mac='00:00:00:00:00:02', ip='10.0.0.2/8')
-    sta2 = net.addStation('sta2', cls=NdnStation, mac='00:00:00:00:00:03', ip='10.0.0.3/8')
-    ap1 = net.addAccessPoint('ap1', ssid='new-ssid', mode='g', channel='1', position='50,50,0')
-    c1 = net.addController('c1', controller=Controller)
+    if not options.adhoc:
+        sta1 = net.addStation('sta1', cls=NdnStation, mac='00:00:00:00:00:02', ip='10.0.0.2/8')
+        sta2 = net.addStation('sta2', cls=NdnStation, mac='00:00:00:00:00:03', ip='10.0.0.3/8')
+        ap1 = net.addAccessPoint('ap1', ssid='new-ssid', mode='g', channel='1', position='50,50,0')
+        c1 = net.addController('c1', controller=Controller)
 
-    net.configureWifiNodes()
+        net.configureWifiNodes()
 
-    net.addLink(ap1, sta1)
-    net.addLink(ap1, sta2)
+        net.addLink(ap1, sta1)
+        net.addLink(ap1, sta2)
 
-    net.build()
-    c1.start()
-    ap1.start([c1])
+        net.build()
+        c1.start()
+        ap1.start([c1])
 
-    ndn.vanet.start_mobility(net, [sta1, sta2], [])
+        ndn.vanet.start_mobility(net, [sta1, sta2], [])
 
-    t2 = datetime.datetime.now()
+        t2 = datetime.datetime.now()
 
-    delta = t2 - t
+        delta = t2 - t
 
-    info('Setup time: ' + str(delta.seconds) + '\n')
+        info('Setup time: ' + str(delta.seconds) + '\n')
 
-    net.start()
+        net.start()
 
-    sta1.cmd('ndnpingserver /sta1 &')
-    sta2.cmd('ndnpingserver /sta2 &')
+        sta1.cmd('ndnpingserver /sta1 &')
+        sta2.cmd('ndnpingserver /sta2 &')
+    else:
+        sta1 = net.addStation( 'sta1', cls=NdnStation )
+        sta2 = net.addStation( 'sta2', cls=NdnStation )
+        net.configureWifiNodes()
+        net.addHoc(sta1, ssid='adhocNet', mode='g')
+        net.addHoc(sta2, ssid='adhocNet', mode='g')
+
+        for car in [sta1, sta2]:
+            wifiFace = ""
+            while wifiFace == "":
+                wifiFace = car.cmd("nfdc face | grep wlan")
+                time.sleep(0.01)
+            wifiFace = wifiFace.split(" ")[0]
+            wifiFace = wifiFace.split("=")[1]
+            print(wifiFace)
+            if car == sta1:
+                car.cmd("nfdc route add /sta2 %s" % wifiFace)
+            else:
+                car.cmd("nfdc route add /sta1 %s" % wifiFace)
+            car.cmd('ndnpingserver /{} &'.format(car.name))
+        net.build()
+        ndn.vanet.start_mobility(net, [sta1, sta2], [])
+
 
     # Giving proper IPs to intf so neighbor nodes can communicate
     # This is one way of giving connectivity, another way could be
