@@ -60,6 +60,7 @@
 
 from mininet.topo import Topo
 from mininet.net import Mininet
+from mininet.node import Controller, OVSKernelAP
 from mininet.log import setLogLevel, output, info
 from mininet.cli import CLI
 from mininet.link import TCLink
@@ -271,67 +272,35 @@ def execute(options):
 
     t = datetime.datetime.now()
 
+    openflow_params = {
+        'controller': Controller,
+        'accessPoint': OVSKernelAP,
+    }
+
     if topo.isTCLink == True and topo.isLimited == True:
-        net = Mininet(topo,host=CpuLimitedNdnHost,link=TCLink)
+        net = Mininet(topo,host=CpuLimitedNdnHost,link=TCLink, **openflow_params)
     elif topo.isTCLink == True and topo.isLimited == False:
-        net = Mininet(topo,host=NdnHost,link=TCLink)
+        net = Mininet(topo,host=NdnHost,link=TCLink, **openflow_params)
     elif topo.isTCLink == False and topo.isLimited == True:
-        net = Mininet(topo,host=CpuLimitedNdnHost)
+        net = Mininet(topo,host=CpuLimitedNdnHost, **openflow_params)
     else:
-        net = Mininet(topo,host=NdnHost)
+        net = Mininet(topo,host=NdnHost, **openflow_params)
 
-    # Mininet WiFi
-    access_points = {}
-    for idx, ap_conf in enumerate(topo.access_points):
-        name = ap_conf.get('name', 'ap{}'.format(idx))
-        ssid = ap_conf.get('ssid', 'ndn')
-        pos = ap_conf.get(
-            'pos',
-            '{},{},0'.format(random.randint(0, 100), random.randint(0, 100))
-        )
-        ap = net.addAccessPoint(
-            name,
-            ssid=ssid,
-            position=pos,
-            range=ap_conf.get('range', 25),
-        )
-        access_points[name] = ap
-
-    cars = []
-    for idx, car_conf in enumerate(topo.cars):
-        car = net.addStation(
-            car_conf.get('name', 'car{}'.format(idx)),
-            cls=NdnStation,
-            range=car_conf.get('range', 10),
-        )
-        car.conf = car_conf
-        cars.append(car)
-
-        if 'ap' in car_conf:
-            ap_name = car_conf.get('ap')
-            ap = access_points.get(ap_name)
-            if ap:
-                net.addLink(ap, car)
+    sta1 = net.addStation('sta1', cls=NdnStation, mac='00:00:00:00:00:02', ip='10.0.0.2/8')
+    sta2 = net.addStation('sta2', cls=NdnStation, mac='00:00:00:00:00:03', ip='10.0.0.3/8')
+    ap1 = net.addAccessPoint('ap1', ssid='new-ssid', mode='g', channel='1', position='50,50,0')
+    c1 = net.addController('c1', controller=Controller)
 
     net.configureWifiNodes()
 
-    # The first few time car.cmd does not return anything!
-    for car in cars:
-        print("car: ", car)
-        net.addHoc(car, ssid=car.conf.get('adhoc-ssid', 'adhocNet'), mode='g')
-        wifiFace = ""
-        while wifiFace == "":
-            wifiFace = car.cmd("nfdc face | grep wlan")
-            time.sleep(0.01)
-        wifiFace = wifiFace.split(" ")[0]
-        wifiFace = wifiFace.split("=")[1]
-        print(wifiFace)
-        car.cmd("nfdc route add / %s" % wifiFace)
+    net.addLink(ap1, sta1)
+    net.addLink(ap1, sta2)
 
     net.build()
+    c1.start()
+    ap1.start([c1])
 
-
-    ndn.vanet.start_mobility(net, cars, access_points)
+    ndn.vanet.start_mobility(net, [sta1, sta2], [])
 
     t2 = datetime.datetime.now()
 
@@ -340,6 +309,9 @@ def execute(options):
     info('Setup time: ' + str(delta.seconds) + '\n')
 
     net.start()
+
+    sta1.cmd('ndnpingserver /sta1 &')
+    sta2.cmd('ndnpingserver /sta2 &')
 
     # Giving proper IPs to intf so neighbor nodes can communicate
     # This is one way of giving connectivity, another way could be
@@ -372,6 +344,7 @@ def execute(options):
 
     # NLSR initialization
     for host in net.hosts:
+        continue
         if type(host) is NdnStation:
             continue
         nodes += str(host.name) + ","
