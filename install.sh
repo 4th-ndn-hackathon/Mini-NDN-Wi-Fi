@@ -198,6 +198,24 @@ function mininet {
     cd ../
 }
 
+function mininetwifi {
+    if [[ updated != true ]]; then
+        $update
+        updated="true"
+    fi
+
+    if [[ $pysetup != true ]]; then
+        pysetup="true"
+    fi
+
+    git clone --depth 1 https://github.com/intrig-unicamp/mininet-wifi.git
+    sudo cp -r mininet-wifi-mode/* mininet-wifi/ 
+    cd mininet-wifi
+    sudo ./util/install.sh -Wfnv
+    cd ../
+}
+
+
 function minindn {
     if [[ updated != true ]]; then
         if [ ! -d "build" ]; then
@@ -222,7 +240,7 @@ function minindn {
 
 
 function usage {
-    printf '\nUsage: %s [-mfrti]\n\n' $(basename $0) >&2
+    printf '\nUsage: %s [-mfrtiw]\n\n' $(basename $0) >&2
 
     printf 'options:\n' >&2
     printf -- ' -f: install NFD\n' >&2
@@ -230,13 +248,14 @@ function usage {
     printf -- ' -m: install mininet and dependencies\n' >&2
     printf -- ' -r: install NLSR\n' >&2
     printf -- ' -t: install tools\n' >&2
+    printf -- ' -w: install mininetwifi\n' >&2
     exit 2
 }
 
 if [[ $# -eq 0 ]]; then
     usage
 else
-    while getopts 'mfrti' OPTION
+    while getopts 'mfrtiw' OPTION
     do
         case $OPTION in
         f)    forwarder;;
@@ -244,6 +263,7 @@ else
         m)    mininet;;
         r)    routing;;
         t)    tools;;
+        w)    mininetwifi;;
         ?)    usage;;
         esac
     done
