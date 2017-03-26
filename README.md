@@ -20,6 +20,14 @@ Bug reports and feedback are highly appreciated and can be made through our
 [Redmine site](http://redmine.named-data.net/projects/mini-ndn) and the
 [mini-ndn mailing list](http://www.lists.cs.ucla.edu/mailman/listinfo/mini-ndn).
 
+### 4th NDN Hackathon Team Member:
+- Ashlesh Gawande (University of Memphis)
+- Vince Lehman ((Alumni) University of Memphis)
+- Chavoosh Ghasemi (University of Arizona)
+- Jacopo De Benedetto (University of Goettingen)
+- Laqin Fan (University of Memphis)
+- Muktadir Chowdhury (University of Memphis)
+
 ### Documentation
 
 * [Installation](INSTALL.md)
